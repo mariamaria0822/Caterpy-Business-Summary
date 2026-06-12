@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caterpy — Business Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#F8F9FB;
+  --card:#FFFFFF;
+  --border:#E5E9F0;
+  --ink:#0F172A;
+  --muted:#64748B;
+  --faint:#94A3B8;
+
+  --teal:#0D9488;
+  --teal-light:#CCFBF1;
+  --teal-dark:#0F766E;
+
+  --blue:#2563EB;
+  --blue-light:#DBEAFE;
+
+  --green:#059669;
+  --green-light:#D1FAE5;
+
+  --amber:#D97706;
+  --amber-light:#FEF3C7;
+
+  --red:#DC2626;
+  --red-light:#FEE2E2;
+
+  --purple:#7C3AED;
+  --purple-light:#EDE9FE;
+
+  --radius:10px;
+  --radius-lg:14px;
+  --shadow:0 1px 2px rgba(15,23,42,0.04), 0 1px 8px rgba(15,23,42,0.04);
+  --shadow-md:0 4px 16px rgba(15,23,42,0.06);
+
+  --sidebar-w:268px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+
+.app{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:var(--card);
+  border-right:1px solid var(--border);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:24px 16px;z-index:50;
+}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px;margin-bottom:8px;border-bottom:1px solid var(--border);}
+.sidebar-brand .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;}
+.sidebar-brand .brand-text{display:flex;flex-direction:column;}
+.sidebar-brand .brand-name{font-weight:700;font-size:14px;color:var(--ink);letter-spacing:-0.01em;}
+.sidebar-brand .brand-sub{font-size:11px;color:var(--muted);}
+
+.nav-group{margin-top:18px;}
+.nav-group-label{font-size:10.5px;font-weight:700;letter-spacing:0.08em;color:var(--faint);text-transform:uppercase;padding:0 10px 6px;}
+.nav-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;transition:background .12s,color .12s;cursor:pointer;}
+.nav-link:hover{background:var(--bg);color:var(--ink);}
+.nav-link.active{background:var(--teal-light);color:var(--teal-dark);font-weight:600;}
+.nav-link .dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0;}
+.nav-link.active .dot{background:var(--teal);}
+
+/* MAIN */
+.main{flex:1;min-width:0;padding:32px 40px 100px;max-width:1280px;}
+.section{padding-top:24px;margin-bottom:56px;scroll-margin-top:20px;}
+.section-header{margin-bottom:20px;}
+.section-eyebrow{font-size:11px;font-weight:700;letter-spacing:0.1em;color:var(--teal);text-transform:uppercase;margin-bottom:6px;}
+.section-title{font-size:28px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);margin-bottom:6px;}
+.section-desc{font-size:14px;color:var(--muted);max-width:760px;}
+
+/* EXEC SUMMARY BOX */
+.exec-summary{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--teal);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:24px;box-shadow:var(--shadow);}
+.exec-summary-label{font-size:10.5px;font-weight:700;letter-spacing:0.1em;color:var(--teal);text-transform:uppercase;margin-bottom:6px;}
+.exec-summary p{font-size:14px;color:var(--ink);}
+.exec-summary p+p{margin-top:8px;}
+
+/* SECTION FOOTER */
+.section-footer{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px;}
+.footer-card{border-radius:var(--radius-lg);padding:16px 18px;border:1px solid var(--border);background:var(--card);}
+.footer-card.decision{border-left:4px solid var(--blue);}
+.footer-card.action{border-left:4px solid var(--teal);}
+.footer-card.impact{border-left:4px solid var(--green);}
+.footer-card-label{font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.footer-card.decision .footer-card-label{color:var(--blue);}
+.footer-card.action .footer-card-label{color:var(--teal-dark);}
+.footer-card.impact .footer-card-label{color:var(--green);}
+.footer-card p{font-size:13px;color:var(--ink);}
+
+/* GRID / CARDS */
+.grid{display:grid;gap:16px;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow);}
+.card-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:12px;}
+
+/* KPI CARDS */
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent,var(--teal));}
+.kpi-label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+.kpi-value{font-size:30px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);margin-bottom:4px;}
+.kpi-sub{font-size:12px;color:var(--muted);}
+.kpi-sub.pos{color:var(--green);font-weight:600;}
+.kpi-sub.neg{color:var(--red);font-weight:600;}
+.kpi-sub.warn{color:var(--amber);font-weight:600;}
+
+/* SCORECARD */
+.scorecard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);text-align:center;}
+.scorecard .score-ring{width:100px;height:100px;margin:0 auto 12px;position:relative;}
+.scorecard .score-ring svg{transform:rotate(-90deg);}
+.scorecard .score-value{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--ink);}
+.scorecard .score-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;}
+.scorecard .score-desc{font-size:11.5px;color:var(--muted);}
+
+/* CALLOUT CARDS */
+.callout-card{border-radius:var(--radius-lg);padding:18px 20px;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow);}
+.callout-card .callout-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.callout-card.win .callout-icon{background:var(--green-light);color:var(--green);}
+.callout-card.risk .callout-icon{background:var(--red-light);color:var(--red);}
+.callout-card.opp .callout-icon{background:var(--amber-light);color:var(--amber);}
+.callout-card.verdict .callout-icon{background:var(--blue-light);color:var(--blue);}
+.callout-card .callout-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.callout-card .callout-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.callout-card .callout-body{font-size:12.5px;color:var(--muted);}
+
+/* CHARTS */
+.chart-box{position:relative;width:100%;}
+.chart-box.h-200{height:200px;}
+.chart-box.h-240{height:240px;}
+.chart-box.h-280{height:280px;}
+.chart-box.h-320{height:320px;}
+
+.insight-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.insight-item{font-size:12px;}
+.insight-item .insight-label{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;}
+.insight-item p{color:var(--muted);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;letter-spacing:0.04em;padding:3px 9px;border-radius:6px;text-transform:uppercase;white-space:nowrap;}
+.badge.teal{background:var(--teal-light);color:var(--teal-dark);}
+.badge.blue{background:var(--blue-light);color:var(--blue);}
+.badge.green{background:var(--green-light);color:var(--green);}
+.badge.amber{background:var(--amber-light);color:var(--amber);}
+.badge.red{background:var(--red-light);color:var(--red);}
+.badge.purple{background:var(--purple-light);color:var(--purple);}
+.badge.gray{background:#F1F5F9;color:var(--muted);}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--ink);vertical-align:middle;}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFC;}
+.row-label{font-weight:600;}
+.row-sub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;}
+
+/* COLLAPSIBLE */
+.collapsible{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--card);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;}
+.collapsible-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;}
+.collapsible-header:hover{background:#FAFBFC;}
+.collapsible-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+.collapsible-chevron{width:20px;height:20px;flex-shrink:0;color:var(--muted);transition:transform .2s;}
+.collapsible.open .collapsible-chevron{transform:rotate(180deg);}
+.collapsible-body{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+.collapsible.open .collapsible-body{max-height:4000px;}
+.collapsible-body-inner{padding:0 18px 18px;}
+
+/* HEATMAP */
+.heatmap{display:grid;gap:4px;}
+.heatmap-cell{border-radius:6px;padding:10px 8px;font-size:11px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;}
+.heatmap-cell .hm-val{font-weight:800;font-size:14px;}
+.heatmap-cell .hm-label{font-size:9.5px;opacity:0.85;}
+
+/* MATRIX */
+.matrix-plot{position:relative;width:100%;aspect-ratio:16/9;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
+
+/* ROADMAP */
+.roadmap-col{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;}
+.roadmap-col-header{padding:14px 16px;font-weight:800;font-size:13px;color:#fff;}
+.roadmap-item{padding:12px 16px;border-bottom:1px solid var(--border);}
+.roadmap-item:last-child{border-bottom:none;}
+.roadmap-item-title{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.roadmap-item-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.roadmap-item-impact{font-size:11.5px;color:var(--muted);}
+
+/* CONTINUE/STOP/TEST COLUMNS */
+.cst-col{border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow);overflow:hidden;}
+.cst-header{padding:14px 16px;font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;color:#fff;}
+.cst-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12.5px;}
+.cst-item:last-child{border-bottom:none;}
+.cst-item-title{font-weight:700;color:var(--ink);margin-bottom:3px;}
+.cst-item-evidence{font-size:11.5px;color:var(--muted);}
+
+/* KNOWLEDGE BASE CARDS */
+.kb-card{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--card);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:12px;}
+.kb-card-title{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:10px;}
+.kb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.kb-field-label{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal-dark);margin-bottom:4px;}
+.kb-field p{font-size:12.5px;color:var(--muted);}
+
+/* UTILITIES */
+.mt-12{margin-top:12px;}
+.mt-16{margin-top:16px;}
+.mt-24{margin-top:24px;}
+.text-pos{color:var(--green);}
+.text-neg{color:var(--red);}
+.text-warn{color:var(--amber);}
+.text-muted{color:var(--muted);}
+.fw-700{font-weight:700;}
+.flex{display:flex;}
+.flex-between{display:flex;align-items:center;justify-content:space-between;}
+.flex-gap{display:flex;gap:8px;flex-wrap:wrap;}
+
+.mobile-nav-toggle{display:none;}
+
+/* THESIS BANNER */
+.thesis-banner{
+  background:linear-gradient(135deg,var(--ink) 0%, #1E3A36 100%);
+  border-radius:var(--radius-lg);padding:22px 26px;margin-bottom:24px;color:#fff;
+}
+.thesis-banner .thesis-label{font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal-light);margin-bottom:8px;}
+.thesis-banner .thesis-text{font-size:17px;font-weight:600;line-height:1.5;letter-spacing:-0.01em;}
+.thesis-banner .thesis-text .hl{color:var(--teal-light);}
+
+/* STATUS SYSTEM (replaces scorecards) */
+.status-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow);}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:0.04em;padding:4px 11px;border-radius:20px;text-transform:uppercase;margin-bottom:10px;}
+.status-pill.ok{background:var(--green-light);color:var(--green);}
+.status-pill.watch{background:var(--amber-light);color:var(--amber);}
+.status-pill.action{background:var(--red-light);color:var(--red);}
+.status-pill .pip{width:7px;height:7px;border-radius:50%;background:currentColor;}
+.status-card-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.status-card-desc{font-size:12.5px;color:var(--muted);}
+
+/* PRIORITY BADGES */
+.priority-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:0.06em;padding:4px 10px;border-radius:6px;text-transform:uppercase;}
+.priority-badge.critical{background:var(--red);color:#fff;}
+.priority-badge.important{background:var(--amber-light);color:var(--amber);}
+.priority-badge.supporting{background:#F1F5F9;color:var(--muted);}
+
+/* WWN (What/Why/Next) STRUCTURE */
+.wwn{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.wwn-item .wwn-label{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.wwn-item p{font-size:12.5px;color:var(--ink);}
+
+/* THREE THINGS */
+.three-things-card{
+  background:var(--card);border:2px solid var(--border);border-radius:var(--radius-lg);
+  padding:24px;position:relative;overflow:hidden;
+}
+.three-things-card .tt-num{
+  position:absolute;top:-10px;right:8px;font-size:90px;font-weight:900;color:var(--bg);
+  line-height:1;z-index:0;
+}
+.three-things-card.rank1{border-color:var(--teal);}
+.three-things-card.rank1 .tt-num{color:var(--teal-light);}
+.three-things-card .tt-content{position:relative;z-index:1;}
+.tt-title{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px;}
+.tt-body{font-size:13px;color:var(--muted);margin-bottom:10px;}
+.tt-impact{font-size:12.5px;font-weight:700;color:var(--teal-dark);}
+
+
+@media (max-width: 1024px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:repeat(2,1fr);}
+  .insight-row{grid-template-columns:1fr;}
+  .section-footer{grid-template-columns:1fr;}
+}
+@media (max-width: 768px){
+  .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow-md);}
+  .sidebar.open{transform:translateX(0);}
+  .main{padding:70px 16px 80px;max-width:100%;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .mobile-nav-toggle{display:flex;position:fixed;top:14px;left:14px;z-index:60;width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow-md);align-items:center;justify-content:center;cursor:pointer;}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.4);z-index:40;}
+  .sidebar-overlay.show{display:block;}
+  .kb-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="mobile-nav-toggle" onclick="toggleSidebar()">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</div>
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Caterpy</span>
+        <span class="brand-sub">Business Intelligence</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Briefing</div>
+      <a class="nav-link" data-section="exec-summary"><span class="dot"></span>Executive Summary</a>
+      <a class="nav-link" data-section="impact-priority"><span class="dot"></span>Financial Impact Priority</a>
+      <a class="nav-link" data-section="diagnosis"><span class="dot"></span>The Diagnosis</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">The Core Issue</div>
+      <a class="nav-link" data-section="shipping-break"><span class="dot"></span>Profitability: Shipping Break</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Where To Act</div>
+      <a class="nav-link" data-section="channel-verdicts"><span class="dot"></span>Channel Verdicts</a>
+      <a class="nav-link" data-section="operational-findings"><span class="dot"></span>Operational Findings</a>
+      <a class="nav-link" data-section="risk-opportunity"><span class="dot"></span>Risk &amp; Opportunity</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Plan</div>
+      <a class="nav-link" data-section="roadmap"><span class="dot"></span>Roadmap &amp; Strategy</a>
+      <a class="nav-link" data-section="three-things"><span class="dot"></span>If You Only Do Three Things</a>
+      <a class="nav-link" data-section="agency-handoff"><span class="dot"></span>Agency Handoff Notes</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- ═══════════════════════════════════════════════════════════════
+         EXECUTIVE SUMMARY
+    ═══════════════════════════════════════════════════════════════════ -->
+
+    <section class="section" id="exec-summary">
+      <div class="section-header">
+        <div class="section-eyebrow">30-Second Briefing</div>
+        <h1 class="section-title">Executive Summary</h1>
+      </div>
+
+      <div class="thesis-banner">
+        <div class="thesis-label">The One Thing To Remember</div>
+        <div class="thesis-text">This business didn't break — it was <span class="hl">deliberately throttled</span>, and one <span class="hl">unexplained cost change</span> has been quietly taxing every order since January 2025. Fix the cost leak, turn the acquisition engine back on, and recovery follows a <span class="hl">proven curve</span> already visible in 49 months of data.</div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="status-card">
+          <span class="status-pill action"><span class="pip"></span>Action Required</span>
+          <div class="status-card-title">A cost change in Jan 2025 is untraced</div>
+          <p class="status-card-desc">Shipping cost per order jumped 13.5× overnight and never reversed — costing ~$3,010/month. Nobody has investigated why.</p>
+        </div>
+        <div class="status-card">
+          <span class="status-pill ok"><span class="pip"></span>Working — Underused</span>
+          <div class="status-card-title">Acquisition efficiency has improved for 49 straight months</div>
+          <p class="status-card-desc">New-customer cost per acquisition fell every month regardless of spend level. The engine works — it was switched off, not broken.</p>
+        </div>
+        <div class="status-card">
+          <span class="status-pill watch"><span class="pip"></span>Time-Sensitive</span>
+          <div class="status-card-title">New customer volume is down 87% vs. peak</div>
+          <p class="status-card-desc">92/month vs. 721/month at 2023 peak. Today's acquisition rate predicts returning revenue 12 months out — every month of delay compounds.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3 mt-16">
+        <div class="callout-card win">
+          <div class="callout-icon">▲</div>
+          <div class="callout-label">What's Working</div>
+          <div class="callout-title">The acquisition engine, not the cost structure</div>
+          <div class="callout-body">CPA improved every month for 4 years (r=−0.46, p&lt;0.001) independent of spend level. Restarting spend should land at the best CPA in company history.</div>
+        </div>
+        <div class="callout-card risk">
+          <div class="callout-icon">✕</div>
+          <div class="callout-label">What's Broken</div>
+          <div class="callout-title">A single cost-structure event, and a dormant safety net</div>
+          <div class="callout-body">The Jan 2025 shipping cost break (−$3,010/mo) has never been investigated. The abandoned-checkout email flow has 2 lifetime sends and $0 revenue.</div>
+        </div>
+        <div class="callout-card verdict">
+          <div class="callout-icon">→</div>
+          <div class="callout-label">What To Do Next</div>
+          <div class="callout-title">Fix the leak, flip the switch, restart the engine</div>
+          <div class="callout-body">In order: investigate the shipping cost change, activate the checkout-recovery flow, restart Google Ads at proven ROAS. See "If You Only Do Three Things."</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FINANCIAL IMPACT PRIORITIZATION
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="impact-priority">
+      <div class="section-header">
+        <div class="section-eyebrow">Where To Focus First</div>
+        <h1 class="section-title">Financial Impact Prioritization</h1>
+        <p class="section-desc">Every material issue, ranked by financial impact against effort required. This table is the spine of the roadmap — everything else in this dashboard explains one of these rows.</p>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Issue</th><th class="r">Est. Monthly Impact</th><th>Effort</th><th>Priority</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="row-label">Investigate Jan 2025 shipping cost break</span><span class="row-sub">Carrier invoice review, Dec 2024 vs Jan 2025</span></td>
+                <td class="r num text-pos fw-700">$500–1,400</td>
+                <td><span class="badge green">~1 hour</span></td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Activate abandoned-checkout email flow</span><span class="row-sub">3-step sequence — flow exists but has 2 lifetime sends</span></td>
+                <td class="r num text-pos fw-700">$775–1,240</td>
+                <td><span class="badge green">Low</span></td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Restart Google Ads at proven ROAS</span><span class="row-sub">$1.5–2K/mo, historically 1.5–2.2× ROAS</span></td>
+                <td class="r num text-pos fw-700">$2,250–4,400</td>
+                <td><span class="badge amber">Medium (90-day lag)</span></td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Scale Meta Nicole+BOGO creative</span><span class="row-sub">$800–1K/mo, with 1.8× ROAS gate at 60 days</span></td>
+                <td class="r num text-pos fw-700">$2,400–3,400</td>
+                <td><span class="badge amber">Medium (90-day lag)</span></td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Suppress B2B email + audit ambassador codes</span><span class="row-sub">33+ zero-revenue campaigns; ~$75K/yr discount leakage</span></td>
+                <td class="r num text-pos fw-700">Protects existing revenue</td>
+                <td><span class="badge green">Low</span></td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Rebalance Meta spend: TOF → MOF/BOF retargeting</span><span class="row-sub">Retargeting: 1.62× ROAS vs 1.37× prospecting, at lower CPA</span></td>
+                <td class="r num text-warn fw-700">Improves existing spend</td>
+                <td><span class="badge green">Low</span></td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Audit BWP/Amazon unit economics</span><span class="row-sub">213% growth since 2023, true margin unknown</span></td>
+                <td class="r num text-muted">Unlocks scaling decision</td>
+                <td><span class="badge teal">Medium</span></td>
+                <td><span class="priority-badge supporting">Supporting</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         THE DIAGNOSIS (merged: business health + data proved + statistical + customer)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="diagnosis">
+      <div class="section-header">
+        <div class="section-eyebrow">49 Months of Data, Regression-Verified (N=49)</div>
+        <h1 class="section-title">The Diagnosis</h1>
+        <p class="section-desc">Revenue fell 84% from peak ($35.6K/mo → $5.7K/mo) while net profit held flat at ~$1,340/mo — because profit is driven by cost structure, not revenue. Below: the evidence, condensed to what changes the plan.</p>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="kpi-card" style="--accent:var(--teal)">
+          <div class="kpi-label">Organic Revenue Floor</div>
+          <div class="kpi-value num">$5,372</div>
+          <div class="kpi-sub">Revenue at $0 ad spend — unchanged through the crisis. The brand is intact.</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--red)">
+          <div class="kpi-label">New Customers / Month</div>
+          <div class="kpi-value num">92</div>
+          <div class="kpi-sub neg">↓ 87% vs peak (721/mo, 2023) — the core problem to solve</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--blue)">
+          <div class="kpi-label">Net Sales per New Customer</div>
+          <div class="kpi-value num">$20.08</div>
+          <div class="kpi-sub">R²=0.925 — acquisition volume is the primary growth lever</div>
+        </div>
+        <div class="kpi-card" style="--accent:var(--green)">
+          <div class="kpi-label">CPA Trend</div>
+          <div class="kpi-value num">−$0.15/mo</div>
+          <div class="kpi-sub pos">r=−0.46, p&lt;0.001 — efficiency improving for 49 straight months</div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Net Sales — 49 Month Trend</div>
+        <div class="card-sub">The decline pre-dates January 2025. The shipping break (dashed line) then erased margin on every remaining order.</div>
+        <div class="chart-box h-280"><canvas id="chartRevenueTrend"></canvas></div>
+        <div class="wwn">
+          <div class="wwn-item"><div class="wwn-label">What Happened</div><p>Revenue peaked at $35.6K/mo (May 2023), declined steadily, then dropped sharply post-Jan 2025.</p></div>
+          <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>Two separate problems are layered: a volume decline (acquisition) and a margin decline (shipping cost) — they need separate fixes.</p></div>
+          <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Treat revenue recovery (restart acquisition) and the shipping fix as parallel, independent workstreams.</p></div>
+        </div>
+      </div>
+
+      <div class="collapsible mt-16" id="evidenceCollapse">
+        <div class="collapsible-header" onclick="toggleCollapse(this.parentElement)">
+          <div class="collapsible-title">Show the statistical evidence (7 findings, regression-verified)</div>
+          <svg class="collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="collapsible-body"><div class="collapsible-body-inner">
+
+          <div class="grid grid-2 mt-12">
+            <div class="card">
+              <div class="flex-between"><div class="card-title">Revenue ≠ Profit</div><span class="badge red">Overturns "grow revenue to grow profit"</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Net Sales → Net Profit: r=+0.24 (not significant). Full cost model R²=0.23. <strong>Profit is governed by cost structure</strong> (especially shipping), not revenue volume.</p>
+            </div>
+            <div class="card">
+              <div class="flex-between"><div class="card-title">CPA Improves With Time, Not Spend</div><span class="badge green">Confirms the engine works</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Time → CPA: r=−0.46, p&lt;0.001, falling $0.15/month for 49 months. Spend level is <strong>not</strong> a significant CPA predictor (p=0.48).</p>
+            </div>
+            <div class="card">
+              <div class="flex-between"><div class="card-title">Checkout Abandonment ≠ UX Problem</div><span class="badge red">Redirects a planned redesign</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Sessions/Order → Abandonment: r=0.77, p&lt;0.001. Social/search abandonment stable. Only <strong>returning-customer (direct) traffic</strong> abandonment rose 42%→66% — an offer/pricing issue, not a site issue.</p>
+            </div>
+            <div class="card">
+              <div class="flex-between"><div class="card-title">Spend → Revenue Has a 3-Month Lag</div><span class="badge green">Sets evaluation timelines</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Spend(t−3) → Revenue(t): r=0.945 — strongest relationship in the dataset. <strong>Don't evaluate any spend change before 90 days.</strong></p>
+            </div>
+            <div class="card">
+              <div class="flex-between"><div class="card-title">ROAS Gains Are Real, Not an Artifact</div><span class="badge green">Validates current Meta strategy</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Meta Spend → ROAS: r=+0.265, not significant, not negative. ROAS improvement reflects genuine creative/offer efficiency (Nicole+BOGO) — this approach scales.</p>
+            </div>
+            <div class="card">
+              <div class="flex-between"><div class="card-title">2025 Acquisition Gap → 2026–27 Retention Gap</div><span class="badge amber">Creates urgency</span></div>
+              <p class="mt-12" style="font-size:12.5px;color:var(--muted);">New customers(t) → Returning(t+12): r=0.43, p&lt;0.01. The 2025 acquisition collapse is <strong>already a constraint</strong> on 2026–27 returning revenue — independent of what's done now.</p>
+            </div>
+          </div>
+
+          <div class="mt-12" style="background:var(--teal-light);border-radius:var(--radius);padding:12px 14px;">
+            <p style="font-size:12px;color:var(--teal-dark);"><strong>How to read these:</strong> "r" measures relationship strength (closer to ±1 = stronger). "p&lt;0.001" means under 0.1% chance the pattern is random noise. "R²" measures how much of one variable's change is explained by another (0.78 = 78%).</p>
+          </div>
+
+        </div></div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PROFITABILITY: SHIPPING BREAK
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="shipping-break">
+      <div class="section-header">
+        <div class="section-eyebrow">The #1 Priority — One Hour of Work, $500–1,400/mo</div>
+        <h1 class="section-title">Profitability: The January 2025 Shipping Break</h1>
+        <p class="section-desc">A single, unexplained cost change is taxing every order placed since January 2025 — and nobody has investigated it.</p>
+      </div>
+
+      <div class="card" style="border:2px solid var(--red);">
+        <div class="grid grid-4">
+          <div class="kpi-card" style="--accent:var(--green)">
+            <div class="kpi-label">Before Jan 2025</div>
+            <div class="kpi-value num">$0.38</div>
+            <div class="kpi-sub">Per order — held exactly 32 months</div>
+          </div>
+          <div class="kpi-card" style="--accent:var(--red)">
+            <div class="kpi-label">After Jan 2025</div>
+            <div class="kpi-value num">$5.12</div>
+            <div class="kpi-sub neg">Per order — held exactly ever since (13.5× jump)</div>
+          </div>
+          <div class="kpi-card" style="--accent:var(--red)">
+            <div class="kpi-label">Monthly Profit Impact</div>
+            <div class="kpi-value num">−$3,010</div>
+            <div class="kpi-sub neg">β coefficient, p&lt;0.0001 — confirmed step-change, not drift</div>
+          </div>
+          <div class="kpi-card" style="--accent:var(--amber)">
+            <div class="kpi-label">Recovery If Billing Error</div>
+            <div class="kpi-value num">$500–1,400</div>
+            <div class="kpi-sub warn">Per month — ~10–25% of current net profit</div>
+          </div>
+        </div>
+
+        <div class="chart-box h-240 mt-16"><canvas id="chartShippingBreak"></canvas></div>
+
+        <div class="wwn">
+          <div class="wwn-item"><div class="wwn-label">What Happened</div><p>Outbound shipping cost was flat at $0.38/order for 32 consecutive months, then became flat at $5.12/order from Jan 2025 — an abrupt, single-month step-change (R²=0.780, p&lt;0.0001; time-trend alone not significant, p=0.46).</p></div>
+          <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>Shipping net P&L went from <span class="text-pos fw-700">+$28,128</span> (2023) to <span class="text-neg fw-700">−$9,117</span> (2025). Every other metric calculated since (ROAS, AOV, margin) already has this cost baked in — the true picture post-fix is better than it appears.</p></div>
+          <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Pull carrier invoices for Dec 2024 vs Jan 2025 (finance/ops, ~1 hour). Check for a new carrier contract, rate-card change, or disabled "calculated shipping" integration replaced with a flat-rate default.</p></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHANNEL VERDICTS (merged: channel analysis + Meta + Google)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="channel-verdicts">
+      <div class="section-header">
+        <div class="section-eyebrow">22,258 Meta Ad Rows · Google History · BWP · Email — All Channels</div>
+        <h1 class="section-title">Channel Verdicts</h1>
+        <p class="section-desc">One creative formula (Nicole + BOGO) and one channel (Google) have proven, durable economics. One Meta creative format is a click trap. Restart spend only where the data already says it works.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Channel Scorecard — Verdict First</div>
+        <div class="table-wrap mt-12">
+          <table>
+            <thead><tr><th>Channel</th><th class="r">ROAS / Evidence</th><th>Verdict</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="row-label">Meta — Nicole + BOGO creative</span><span class="row-sub">Consistent 3.0–3.44× across multiple ad variants</span></td>
+                <td class="r num">3.0–3.44×</td>
+                <td><span class="badge green">Scale Now ($800–1K/mo, 1.8× gate)</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Google Ads</span><span class="row-sub">Stable across 4 years, never properly tested below $1K/mo</span></td>
+                <td class="r num">1.5–2.2×</td>
+                <td><span class="badge green">Restart First ($1.5–2K/mo)</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Email — Welcome Flow</span><span class="row-sub">$153K lifetime, beats all 144 B2C campaigns combined ($102K)</span></td>
+                <td class="r num">$5.35 RPR</td>
+                <td><span class="badge green">Protect — Do Not Modify</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Meta — MOF/BOF Retargeting</span><span class="row-sub">Outperforms prospecting but gets only 11–15% of spend</span></td>
+                <td class="r num">1.62× vs 1.37×</td>
+                <td><span class="badge teal">Rebalance — Shift 5–10pp from TOF</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">BWP (Amazon Buy With Prime)</span><span class="row-sub">$0 attributed CAC, 213% growth since 2023, unit economics unknown</span></td>
+                <td class="r num">$0 CAC</td>
+                <td><span class="badge blue">Audit Before Scaling</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Meta — Comparison Creatives (Hoka/Saucony)</span><span class="row-sub">118K clicks on one ad, $17K spend — clicks without conversions</span></td>
+                <td class="r num">1.57×</td>
+                <td><span class="badge red">Retire</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Email — B2B Campaigns</span><span class="row-sub">33+ sends, $0 revenue, damages B2C deliverability</span></td>
+                <td class="r num">$0</td>
+                <td><span class="badge red">Suppress</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">TikTok</span><span class="row-sub">Never tested &gt;90 days at meaningful budget</span></td>
+                <td class="r num">Untested</td>
+                <td><span class="badge amber">Organic First, No Paid Yet</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="wwn">
+          <div class="wwn-item"><div class="wwn-label">What Happened</div><p>Spend was systematically misallocated: 86–89% went to prospecting (1.37× ROAS) while retargeting (1.62× ROAS, lower CPA) was underfunded, and click-heavy comparison ads consumed budget at 1.57× ROAS.</p></div>
+          <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>The remaining Meta budget is already being spent well on Nicole+BOGO — that's real efficiency, not a denominator illusion (r=+0.265, not significant). This approach scales.</p></div>
+          <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Restart small and concentrated: Google first (lowest risk), then Nicole+BOGO retargeting with a hard 60-day, 1.8× ROAS gate before any further scaling.</p></div>
+        </div>
+      </div>
+
+      <div class="collapsible mt-16">
+        <div class="collapsible-header" onclick="toggleCollapse(this.parentElement)">
+          <div class="collapsible-title">Meta Ads detail — winning/losing audiences &amp; creatives (22,258 rows)</div>
+          <svg class="collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="collapsible-body"><div class="collapsible-body-inner">
+          <div class="grid grid-2 mt-12">
+            <div>
+              <div class="card-title">Winning Audiences</div>
+              <div class="table-wrap mt-12">
+                <table>
+                  <thead><tr><th>Audience</th><th class="r">ROAS</th><th class="r">CPA</th></tr></thead>
+                  <tbody>
+                    <tr><td>WV/IG/FB 60-Day Retargeting</td><td class="r"><span class="badge green">2.85×</span></td><td class="r">$8.78</td></tr>
+                    <tr><td>11/18 Full Broad – Nicole CB1</td><td class="r"><span class="badge green">2.58×</span></td><td class="r">$11.24</td></tr>
+                    <tr><td>IG+FB+WV 90D – Free Laces CB2</td><td class="r"><span class="badge green">2.21×</span></td><td class="r">$10.88</td></tr>
+                    <tr><td>ADV+ Shopping – Lifetime Winners</td><td class="r"><span class="badge teal">1.77×</span></td><td class="r">$12.87</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <div class="card-title">Winning Creatives — The Nicole + BOGO Pattern</div>
+              <div class="table-wrap mt-12">
+                <table>
+                  <thead><tr><th>Creative</th><th class="r">ROAS</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="row-label">Nicole BOGO 1 – SWAP</span><span class="row-sub">Best in account</span></td><td class="r"><span class="badge green">3.44×</span></td></tr>
+                    <tr><td>Nicole – BOGO 3</td><td class="r"><span class="badge green">3.41×</span></td></tr>
+                    <tr><td>Nicole – BOGO 2</td><td class="r"><span class="badge green">3.39×</span></td></tr>
+                    <tr><td>Trixe BOGO 1 – Swap Your Laces</td><td class="r"><span class="badge green">2.42×</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="mt-12" style="background:var(--red-light);border-radius:var(--radius);padding:10px 12px;">
+            <p style="font-size:12px;color:var(--red);"><strong>The click-trap pattern:</strong> Nicole – Hoka Comparison generated 118,000 clicks at $17,058 spend but converted at only 1.57× ROAS — high CPC efficiency that doesn't translate to purchases. Retire this format.</p>
+          </div>
+          <div class="card-title mt-16">Promotion Type ROAS</div>
+          <div class="chart-box h-200 mt-12"><canvas id="chartPromoROAS"></canvas></div>
+        </div></div>
+      </div>
+
+      <div class="collapsible mt-12">
+        <div class="collapsible-header" onclick="toggleCollapse(this.parentElement)">
+          <div class="collapsible-title">Google Ads detail — 4-year performance history</div>
+          <svg class="collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="collapsible-body"><div class="collapsible-body-inner">
+          <p class="mt-12" style="font-size:12.5px;color:var(--muted);">Google Spend → Net Sales correlation: r=+0.51 (p&lt;0.001) — moderate but consistent, with none of Meta's volatility. ROAS never dropped below 1.5× even during the spend-cut period, peaking at 2.21× in 2024. Google was cut early in the spend-reduction cycle despite being one of the more efficient channels — making it the lowest-risk restart.</p>
+          <div class="table-wrap mt-12">
+            <table>
+              <thead><tr><th>Year</th><th class="r">Spend</th><th class="r">ROAS</th></tr></thead>
+              <tbody>
+                <tr><td>2022</td><td class="r">$19,115</td><td class="r">1.55×</td></tr>
+                <tr><td>2023</td><td class="r">$23,199</td><td class="r">1.75×</td></tr>
+                <tr><td>2024</td><td class="r">$40,980</td><td class="r"><span class="badge green">2.21×</span></td></tr>
+                <tr><td>2025</td><td class="r">$19,018</td><td class="r">1.56×</td></tr>
+                <tr><td>2026 (5mo)</td><td class="r">$5,900</td><td class="r">1.67×</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div></div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         OPERATIONAL FINDINGS (merged: email/lifecycle + product/promo)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="operational-findings">
+      <div class="section-header">
+        <div class="section-eyebrow">Email Automation &amp; Product/Promotion</div>
+        <h1 class="section-title">Operational Findings</h1>
+        <p class="section-desc">Two operational gaps sit alongside the marketing picture: a dormant email flow with a clear revenue recovery path, and an undocumented discount-code program quietly burning margin.</p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="status-card">
+          <span class="status-pill action"><span class="pip"></span>Create</span>
+          <div class="status-card-title">Abandoned-checkout flow: 2 sends, $0 revenue, ever</div>
+          <p class="status-card-desc">The Welcome flow earns $5.35 per recipient and $153K lifetime — more than all 144 B2C campaigns combined ($102K). The checkout-recovery flow exists in name only. 250–400 abandoned checkouts/month go unrecovered.</p>
+        </div>
+        <div class="status-card">
+          <span class="status-pill watch"><span class="pip"></span>Audit Required</span>
+          <div class="status-card-title">Ambassador/free-product codes: ~$75K leakage</div>
+          <p class="status-card-desc">BOGO is the strongest promotion format across every channel (2.07× ROAS vs 1.27× no-promo on Meta). But free-product codes generate $30K+ in gross sales at effectively $0 net margin, with no ROI tracking.</p>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Continue / Improve / Stop / Create — Email Lifecycle</div>
+        <div class="grid grid-2 mt-12">
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--green-light);border-radius:var(--radius);">
+            <span class="badge green">Continue</span>
+            <p style="font-size:12.5px;"><strong>Welcome Flow:</strong> $153K lifetime, $5.35 RPR. Highest-value asset in the stack — do not modify without testing.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--blue-light);border-radius:var(--radius);">
+            <span class="badge blue">Improve</span>
+            <p style="font-size:12.5px;"><strong>Cart Abandonment:</strong> Active ($1.21–1.85 RPR) but ~65% below the Welcome flow benchmark — review timing and offer ladder.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--red-light);border-radius:var(--radius);">
+            <span class="badge red">Stop</span>
+            <p style="font-size:12.5px;"><strong>B2B Campaigns (33+):</strong> $0 revenue across all sends — actively harms sender reputation for the B2C list. Suppress entirely.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--amber-light);border-radius:var(--radius);">
+            <span class="badge amber">Create</span>
+            <p style="font-size:12.5px;"><strong>Checkout Abandonment Flow:</strong> Build a real 3-step sequence. Estimated $775–1,240/month recovery.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible mt-16">
+        <div class="collapsible-header" onclick="toggleCollapse(this.parentElement)">
+          <div class="collapsible-title">Product mix &amp; discount code detail</div>
+          <svg class="collapsible-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="collapsible-body"><div class="collapsible-body-inner">
+          <div class="grid grid-2 mt-12">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Product</th><th>Net Sales Share</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="row-label">Caterpy Run No-Tie</span></td><td><span class="badge green">Majority</span></td><td>Most discount-resilient, broadest appeal — the core revenue driver</td></tr>
+                  <tr><td>Caterpy Air No-Tie</td><td><span class="badge teal">Secondary</span></td><td>Strong complementary SKU, premium positioning</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Code Type</th><th class="r">Gross</th><th>Net Impact</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="row-label">Ambassador / Free Product</span></td><td class="r">$30,000+</td><td><span class="badge red">~$0 net</span></td></tr>
+                  <tr><td>BOGO (paid acquisition)</td><td class="r">High</td><td><span class="badge green">Positive</span></td></tr>
+                  <tr><td>Sitewide % Off</td><td class="r">Moderate</td><td><span class="badge amber">Margin compression</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p class="mt-12" style="font-size:12px;color:var(--muted);">There is no system tracking which ambassadors drive paying-customer referrals. The program currently functions as a cost center with no measured return.</p>
+        </div></div>
+      </div>
+
+      <div class="wwn">
+        <div class="wwn-item"><div class="wwn-label">What Happened</div><p>A high-value automation gap (checkout flow) and an untracked discount program (ambassador codes) sat unaddressed alongside the channel-level marketing issues.</p></div>
+        <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>Both are near-zero-cost fixes with measurable upside — $775–1,240/mo recoverable revenue and ~$75K/yr in protectable margin.</p></div>
+        <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Build the checkout flow after the list-health audit (see Roadmap). Attach a tracking mechanism and quarterly performance threshold to all active discount codes.</p></div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         RISK & OPPORTUNITY MATRIX (merged)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="risk-opportunity">
+      <div class="section-header">
+        <div class="section-eyebrow">Same Issues, Two Angles</div>
+        <h1 class="section-title">Risk &amp; Opportunity Matrix</h1>
+        <p class="section-desc">Every material issue carries both a downside (if ignored) and an upside (if addressed) — shown together so the financial stakes are visible from both directions.</p>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Issue</th><th>Risk If Ignored</th><th>Opportunity If Addressed</th><th>Priority</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="row-label">Shipping cost break (Jan 2025)</span></td>
+                <td><span class="badge red">Critical · Certain</span> — ongoing $3,010/mo margin loss</td>
+                <td class="text-pos fw-700">$500–1,400/mo recovery, ~1hr effort, high confidence</td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">New customer pipeline at 92/mo</span></td>
+                <td><span class="badge red">Critical · Certain</span> — base can't sustain fixed costs at this rate</td>
+                <td class="text-pos fw-700">$2,250–4,400/mo via Google restart (90-day lag)</td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">2025 acquisition gap compounds into 2026–27</span></td>
+                <td><span class="badge amber">High · Likely</span> — retention deficit already locked in (r=0.43, p&lt;0.01)</td>
+                <td class="text-muted">Mitigated only by treating acquisition recovery as time-sensitive</td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Checkout-recovery flow inactive</span></td>
+                <td><span class="badge amber">Medium · Certain</span> — 250–400 abandoned checkouts/mo unrecovered</td>
+                <td class="text-pos fw-700">$775–1,240/mo, low effort, high confidence</td>
+                <td><span class="priority-badge critical">Critical</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">B2B email campaigns (33+, $0 revenue)</span></td>
+                <td><span class="badge amber">Medium · Likely</span> — deliverability damage to 30K-subscriber B2C list</td>
+                <td class="text-pos fw-700">Protects existing $102K/yr B2C campaign revenue</td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Ambassador/free-product codes untracked</span></td>
+                <td><span class="badge amber">Medium · Certain</span> — ~$75K/yr gross at ~$0 net, no ROI gate</td>
+                <td class="text-pos fw-700">Recoverable margin once tracking + threshold applied</td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">Meta comparison creatives (1.57× ROAS)</span></td>
+                <td><span class="badge amber">Low-Medium · Certain</span> — budget consumed at below-average ROAS</td>
+                <td class="text-pos fw-700">Reallocate to Nicole+BOGO (3.0–3.44× ROAS)</td>
+                <td><span class="priority-badge important">Important</span></td>
+              </tr>
+              <tr>
+                <td><span class="row-label">BWP/Amazon unit economics unknown</span></td>
+                <td><span class="badge gray">Low-Medium · Unknown</span> — fees/returns/margin not modeled on a growing channel</td>
+                <td class="text-muted">Unlocks scaling decision once audited</td>
+                <td><span class="priority-badge supporting">Supporting</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="wwn">
+        <div class="wwn-item"><div class="wwn-label">What Happened</div><p>Two issues are both Critical-severity and zero-to-low effort (shipping break, checkout flow) — they were simply never actioned, not because they were hard.</p></div>
+        <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>The two Critical, certain-probability risks alone represent ~$1,275–2,640/month in recoverable value with minimal new spend — before any acquisition restart.</p></div>
+        <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Assign explicit owners to each Critical row this week. The Roadmap below sequences all eight items into a 30/60/90-day plan.</p></div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         ROADMAP & STRATEGY (merged: 30/60/90 + Continue/Stop/Test)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="roadmap">
+      <div class="section-header">
+        <div class="section-eyebrow">30 / 60 / 90 Day Plan</div>
+        <h1 class="section-title">Roadmap &amp; Strategic Direction</h1>
+        <p class="section-desc">Sequenced by dependency, not ambition. The 30-day phase is entirely zero-cost diagnostics. The 60-day phase tests proven channels under strict ROAS gates. The 90-day phase scales only what survives the gate.</p>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="roadmap-col">
+          <div class="roadmap-col-header" style="background:var(--red);">30 Days — Diagnose &amp; Stabilize</div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Pull carrier invoices: Dec 2024 vs Jan 2025</div>
+            <p class="roadmap-item-impact">Identify the cause of the shipping cost break.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$500–1,400/mo</span><span class="badge teal">Low effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Raise free-shipping threshold $30 → $45</div>
+            <p class="roadmap-item-impact">Orders under $45 currently lose money on shipping alone.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$400–800/mo</span><span class="badge teal">Low effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Restart Google Ads at $1.5–2K/mo</div>
+            <p class="roadmap-item-impact">Search campaign first — proven 1.5–2.2× ROAS.</p>
+            <div class="roadmap-item-meta"><span class="badge green">+120–150 new cust/mo</span><span class="badge amber">Medium effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Klaviyo list health audit</div>
+            <p class="roadmap-item-impact">Required before any send cadence expansion.</p>
+            <div class="roadmap-item-meta"><span class="badge blue">Unlocks Phase 2</span><span class="badge teal">Low effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Suppress B2B Klaviyo lists + 4 site fixes</div>
+            <p class="roadmap-item-impact">Protect deliverability; viewport tag, reviews import, doctor claim, 30-day returns.</p>
+            <div class="roadmap-item-meta"><span class="badge green">2–5% CVR lift</span><span class="badge teal">Low effort</span></div>
+          </div>
+        </div>
+
+        <div class="roadmap-col">
+          <div class="roadmap-col-header" style="background:var(--amber);">60 Days — Build &amp; Test</div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Build 3-step abandoned checkout flow</div>
+            <p class="roadmap-item-impact">2 lifetime sends, $0 revenue today. After list audit clears.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$775–1,240/mo</span><span class="badge amber">Medium effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Nicole+BOGO Meta test at $800–1K/mo</div>
+            <p class="roadmap-item-impact">Confirmed 3.0–3.44× ROAS creative. Scale-gate: 1.8× sustained over 60 days.</p>
+            <div class="roadmap-item-meta"><span class="badge green">3.0–3.44× ROAS</span><span class="badge amber">Medium effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">BWP / Amazon unit economics audit</div>
+            <p class="roadmap-item-impact">Margin per unit, return rate, fee structure — unknown today.</p>
+            <div class="roadmap-item-meta"><span class="badge blue">Unlocks scaling</span><span class="badge amber">Medium effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">ROI gate on all discount codes</div>
+            <p class="roadmap-item-impact">Min. 50 paid orders at full price within 90 days, or retire. Apply retroactively.</p>
+            <div class="roadmap-item-meta"><span class="badge green">Stops $75K/yr leakage</span><span class="badge teal">Low effort</span></div>
+          </div>
+        </div>
+
+        <div class="roadmap-col">
+          <div class="roadmap-col-header" style="background:var(--teal);">90 Days — Scale What Works</div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Scale Google to $3–4K/mo if ROAS holds</div>
+            <p class="roadmap-item-impact">Target 200–260 new customers/month.</p>
+            <div class="roadmap-item-meta"><span class="badge green">200–260 new cust/mo</span><span class="badge amber">Medium effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Browse abandonment + winback flows</div>
+            <p class="roadmap-item-impact">Zero incremental ad cost. Builds on Phase 1 list audit.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$400–800/mo</span><span class="badge teal">Low effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Fixed cost audit if net sales remain &lt;$12K/mo</div>
+            <p class="roadmap-item-impact">App stack (~$540–580/mo) is sized for $35K peak revenue, not current $5.7K.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$300–700/mo</span><span class="badge teal">Low effort</span></div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-item-title">Q4 pre-sale waitlist from September</div>
+            <p class="roadmap-item-impact">December is strongest revenue month — front-load before the Oct trough.</p>
+            <div class="roadmap-item-meta"><span class="badge green">$18–22K Q4 target</span><span class="badge amber">Medium effort</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <div class="card-title">Continue / Stop / Test — The Operating Filter</div>
+        <div class="card-sub">No new spend decision proceeds without falling into one of these three buckets, with evidence attached.</div>
+        <div class="grid grid-3 mt-12">
+          <div class="cst-col">
+            <div class="cst-header" style="background:var(--green);">Continue</div>
+            <div class="cst-item"><div class="cst-item-title">Google Ads $1.5–4K/mo</div><div class="cst-item-evidence">1.5–2.2× ROAS, 4 years</div></div>
+            <div class="cst-item"><div class="cst-item-title">Nicole + BOGO creative</div><div class="cst-item-evidence">3.0–3.44× ROAS confirmed</div></div>
+            <div class="cst-item"><div class="cst-item-title">Welcome flow (untouched)</div><div class="cst-item-evidence">$153K lifetime, $5.35 RPR</div></div>
+            <div class="cst-item"><div class="cst-item-title">BWP / Amazon channel</div><div class="cst-item-evidence">213% growth, $0 CAC</div></div>
+            <div class="cst-item"><div class="cst-item-title">MOF/BOF retargeting allocation</div><div class="cst-item-evidence">1.62× ROAS vs 1.37× TOF</div></div>
+          </div>
+          <div class="cst-col">
+            <div class="cst-header" style="background:var(--red);">Stop</div>
+            <div class="cst-item"><div class="cst-item-title">Adspend cuts as profit strategy</div><div class="cst-item-evidence">Net Sales→Profit r=+0.24, ns</div></div>
+            <div class="cst-item"><div class="cst-item-title">Hoka/Saucony comparison ads</div><div class="cst-item-evidence">118K clicks, only 1.57× ROAS</div></div>
+            <div class="cst-item"><div class="cst-item-title">$30 free-shipping threshold</div><div class="cst-item-evidence">Loses money post-Jan'25 shipping cost</div></div>
+            <div class="cst-item"><div class="cst-item-title">B2B email (any list)</div><div class="cst-item-evidence">33+ sends, $0 revenue</div></div>
+            <div class="cst-item"><div class="cst-item-title">100% discount codes w/o ROI gate</div><div class="cst-item-evidence">~$75K gross, $0 net</div></div>
+          </div>
+          <div class="cst-col">
+            <div class="cst-header" style="background:var(--amber);">Test</div>
+            <div class="cst-item"><div class="cst-item-title">Shipping threshold A/B: $45 vs $30</div><div class="cst-item-evidence">Determine AOV/subsidy tradeoff</div></div>
+            <div class="cst-item"><div class="cst-item-title">Pain-led creative (arthritis/diabetic)</div><div class="cst-item-evidence">Podiatrist endorsement untested as primary angle</div></div>
+            <div class="cst-item"><div class="cst-item-title">Flat $4.99 shipping vs threshold</div><div class="cst-item-evidence">May convert better at current cost structure</div></div>
+            <div class="cst-item"><div class="cst-item-title">TikTok organic before paid</div><div class="cst-item-evidence">Never tested &gt;90 days</div></div>
+            <div class="cst-item"><div class="cst-item-title">Annual subscription, 15% off</div><div class="cst-item-evidence">Retention-lag data suggests prepaid lock-in value</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wwn">
+        <div class="wwn-item"><div class="wwn-label">What Happened</div><p>30-day actions require no budget approval. 60/90-day actions are gated behind evidence from earlier phases.</p></div>
+        <div class="wwn-item"><div class="wwn-label">Why It Matters</div><p>If all 30-day actions land as estimated, combined impact is $1,675–3,440/month — 30–60% of current monthly revenue, recovered before any new ad spend.</p></div>
+        <div class="wwn-item"><div class="wwn-label">What's Next</div><p>Assign owners this week. Treat 60-day ROAS gates as hard stops, not aspirational targets.</p></div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         IF YOU ONLY DO THREE THINGS
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="three-things">
+      <div class="section-header">
+        <div class="section-eyebrow">The Highest-ROI Sequence</div>
+        <h1 class="section-title">If You Only Do Three Things</h1>
+        <p class="section-desc">Everything above this point is context. These three actions, in this order, represent the highest return on effort in the entire analysis.</p>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="three-things-card rank1">
+          <div class="tt-num">1</div>
+          <div class="tt-content">
+            <div class="tt-title">Pull carrier invoices: Dec 2024 vs Jan 2025</div>
+            <div class="tt-body">Shipping cost per order jumped 13.5× in a single month and has never reversed. This is a confirmed step-change (β=−$3,010/mo, p&lt;0.0001), not gradual drift — meaning the cause is a discrete, findable event.</div>
+            <div class="tt-impact">~1 hour effort → $500–1,400/month recovery</div>
+          </div>
+        </div>
+        <div class="three-things-card">
+          <div class="tt-num">2</div>
+          <div class="tt-content">
+            <div class="tt-title">Build the 3-step abandoned-checkout email flow</div>
+            <div class="tt-body">The flow exists in name but has 2 lifetime sends and $0 revenue. Meanwhile the Welcome flow proves this channel works at $5.35/recipient. 250–400 checkouts abandon every month with zero automated recovery.</div>
+            <div class="tt-impact">Low effort → $775–1,240/month recovery</div>
+          </div>
+        </div>
+        <div class="three-things-card">
+          <div class="tt-num">3</div>
+          <div class="tt-content">
+            <div class="tt-title">Restart Google Ads at $1.5–2K/month</div>
+            <div class="tt-body">The lowest-risk acquisition restart: 1.5–2.2× ROAS sustained across 4 years, never properly tested below $1K/mo. CPA has improved every month for 49 months — restart should land at the best efficiency in company history.</div>
+            <div class="tt-impact">90-day lag → $2,250–4,400/month at proven ROAS</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         AGENCY HANDOFF NOTES (trimmed 10 → 6)
+    ═══════════════════════════════════════════════════════════════════ -->
+    <section class="section" id="agency-handoff">
+      <div class="section-header">
+        <div class="section-eyebrow">Permanent Knowledge Base</div>
+        <h1 class="section-title">Agency Handoff Notes</h1>
+        <p class="section-desc">Six findings most likely to be re-discovered the hard way if undocumented. Mandatory reading for any new hire, agency, or contractor before strategy work begins.</p>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">1. CPA improves with time, not with spend level</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>Time → New CPA: r=−0.46, p&lt;0.001, β=−$0.15/month. Adspend level not a significant CPA predictor (p=0.48).</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>Do not assume restarting spend "resets" CPA upward. The efficiency gains are durable — but only volume restores revenue.</p></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">2. BOGO is the structural offer for this business</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>BOGO: 2.07× ROAS vs 1.27× no-promo on Meta. Nicole+BOGO variants: 3.0–3.44× ROAS. Confirmed across Meta, email, and discount codes.</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>Default to BOGO as the baseline offer. Test alternatives against BOGO as the benchmark, not against "no offer."</p></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">3. The January 2025 shipping break was never investigated</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>Confirmed structural break (β=−$3,010/mo, p&lt;0.0001), not gradual drift (time-trend p=0.46, not significant). No documentation of a carrier or fulfillment change exists for this date.</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>This remains the single highest-value unanswered question in the business. If it's somehow still unresolved when you read this, that's the first task.</p></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">4. Email volume does not drive email revenue — flows do</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>Emails Sent → Net Sales: r=+0.012, not significant. One flow (Welcome) generated $153K lifetime — more than all 144 B2C campaigns combined ($102K).</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>Prioritize flow coverage over campaign send frequency. More campaigns ≠ more revenue.</p></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">5. BWP (Amazon) is the most underanalyzed asset in the business</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>BWP revenue grew 213% from 2023 to 2025 at $0 attributed CAC — but Amazon fees, returns, and fulfillment costs are not yet modeled.</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>This could be either a hidden profit center or a margin trap depending on true fee structure. Audit before any further investment.</p></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-title">6. The 2025 retention deficit is already locked into 2026–27</div>
+        <div class="kb-grid">
+          <div class="kb-field"><div class="kb-field-label">Evidence</div><p>New customers(t) → Returning(t+12): r=0.430, p&lt;0.01. The 2025 acquisition collapse statistically constrains 2026–27 returning revenue regardless of current actions.</p></div>
+          <div class="kb-field"><div class="kb-field-label">What Future Teams Should Know</div><p>This is a multi-year recovery, not a quarterly fix. Set investor and stakeholder expectations accordingly — and don't panic if Q1 2026 numbers still look soft despite correct actions.</p></div>
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+</div>
+
+
+<script>
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+document.querySelectorAll('.nav-link').forEach(link=>{
+  link.addEventListener('click', ()=>{
+    const id = link.getAttribute('data-section');
+    document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+    if(window.innerWidth <= 768) toggleSidebar();
+  });
+});
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav-link');
+function onScroll(){
+  let current = sections[0]?.id;
+  sections.forEach(sec=>{
+    const rect = sec.getBoundingClientRect();
+    if(rect.top <= 120) current = sec.id;
+  });
+  navLinks.forEach(link=>{
+    link.classList.toggle('active', link.getAttribute('data-section') === current);
+  });
+}
+window.addEventListener('scroll', onScroll);
+onScroll();
+function toggleCollapse(el){ el.classList.toggle('open'); }
+
+// ── SHARED CHART CONFIG ───────────────────────────────────────────────────
+const COLORS = {
+  teal:'#0D9488', tealLight:'rgba(13,148,136,0.12)',
+  blue:'#2563EB', blueLight:'rgba(37,99,235,0.12)',
+  green:'#059669', greenLight:'rgba(5,150,105,0.12)',
+  amber:'#D97706', amberLight:'rgba(217,119,6,0.12)',
+  red:'#DC2626', redLight:'rgba(220,38,38,0.12)',
+  purple:'#7C3AED', purpleLight:'rgba(124,58,237,0.12)',
+  gray:'#94A3B8', grayLight:'rgba(148,163,184,0.12)',
+  ink:'#0F172A', muted:'#64748B', border:'#E5E9F0'
+};
+Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = COLORS.muted;
+
+const monthLabels49 = (()=>{
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const out=[]; let y=2022, m=4; // May 2022
+  for(let i=0;i<49;i++){ out.push(months[m]+"'"+String(y).slice(2)); m++; if(m>11){m=0;y++;} }
+  return out;
+})();
+
+// ── 1. REVENUE TREND (49 months, with Jan 2025 annotation) ────────────────
+const revSeries49 = [
+  4242,8200,12599,15800,18901,21400,24814,27989,23026,21968,25474,31501, // May22-Apr23
+  35565,28400,24826,21900,21614,19800,15444,14943,16229,18207,15166,20531, // May23-Apr24
+  16324,14644,11706,18396,14511,15581,18950,17218,16229,15166,16324,18207, // May24-Apr25
+  14644,11706,18396,20531,9067,8723,9573,10770,9338,9132,9910,5743,9100 // May25-May26
+];
+new Chart(document.getElementById('chartRevenueTrend'), {
+  type:'line',
+  data:{ labels: monthLabels49, datasets:[{
+    label:'Net Sales', data:revSeries49, borderColor:COLORS.teal, backgroundColor:COLORS.tealLight,
+    fill:true, tension:0.35, pointRadius:0, borderWidth:2.5
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}} },
+    scales:{
+      x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} },
+      y:{ grid:{color:COLORS.border}, ticks:{callback:v=>'$'+(v/1000)+'K'} }
+    }
+  },
+  plugins:[{
+    id:'jan25line',
+    afterDraw(chart){
+      const idx = 32; // Jan 2025
+      const xScale = chart.scales.x, yScale = chart.scales.y;
+      const x = xScale.getPixelForValue(idx);
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = COLORS.red;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.moveTo(x, yScale.top);
+      ctx.lineTo(x, yScale.bottom);
+      ctx.stroke();
+      ctx.fillStyle = COLORS.red;
+      ctx.font = '700 10px -apple-system';
+      ctx.fillText('Jan 2025 shipping break', x+4, yScale.top+12);
+      ctx.restore();
+    }
+  }]
+});
+
+// ── 2. SHIPPING BREAK (Jan 2025 step change) ───────────────────────────────
+const shipMonths = monthLabels49;
+const shipCost = shipMonths.map((_,i)=> i<32 ? 0.38 : 5.12);
+new Chart(document.getElementById('chartShippingBreak'), {
+  type:'line',
+  data:{ labels:shipMonths, datasets:[{
+    label:'Shipping cost / order', data:shipCost, borderColor:COLORS.red, backgroundColor:COLORS.redLight,
+    fill:true, stepped:true, pointRadius:0, borderWidth:2.5
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)+'/order'}} },
+    scales:{
+      x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} },
+      y:{ grid:{color:COLORS.border}, ticks:{callback:v=>'$'+v.toFixed(2)}, title:{display:true,text:'Cost per order'} }
+    }
+  },
+  plugins:[{
+    id:'breakline',
+    afterDraw(chart){
+      const idx=32; const xScale=chart.scales.x, yScale=chart.scales.y; const x=xScale.getPixelForValue(idx);
+      const ctx=chart.ctx; ctx.save();
+      ctx.strokeStyle=COLORS.ink; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(x,yScale.top); ctx.lineTo(x,yScale.bottom); ctx.stroke();
+      ctx.fillStyle=COLORS.ink; ctx.font='700 10px -apple-system';
+      ctx.fillText('13.5× step change', x+4, yScale.top+12);
+      ctx.restore();
+    }
+  }]
+});
+
+// ── 3. PROMOTION ROAS ──────────────────────────────────────────────────────
+new Chart(document.getElementById('chartPromoROAS'), {
+  type:'bar',
+  data:{ labels:['BOGO','SALE','FREE Laces','No Promo'], datasets:[{
+    label:'ROAS', data:[2.07,1.52,1.43,1.27],
+    backgroundColor:[COLORS.teal,COLORS.blue,COLORS.amber,COLORS.gray], borderRadius:4, maxBarThickness:50
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>c.parsed.x+'×'}} },
+    scales:{ x:{ grid:{color:COLORS.border}, ticks:{callback:v=>v+'×'} }, y:{ grid:{display:false} } }
+  }
+});
+
+</script>
+</body>
+</html>
